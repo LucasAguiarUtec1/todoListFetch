@@ -3,21 +3,67 @@ import React, { useEffect, useState } from "react";
 const List = () => {
   const [list, setList] = useState([]);
 
+  const apiUrl = "https://playground.4geeks.com/todo";
+
+  useEffect(() => {
+    fetch(`${apiUrl}/users/lucas_aguiar`)
+      .then((res) => {
+        return res.json();
+      })
+      .then((res) => {
+        const tasks = res.todos.map((todo) => ({
+          label: todo.label,
+          is_done: todo.is_done,
+          id: todo.id,
+        }));
+        setList(tasks);
+      });
+  }, []);
+
   const handleAddTask = (event) => {
-    let task = event.target.value;
+    const task = event.target.value;
+    const body = {
+      label: task,
+      is_done: false,
+    };
     if (list.includes(task)) {
       alert("La tarea ya existe");
     } else if (task !== "") {
-      setList([...list, task]);
-      event.target.value = "";
+      fetch(`${apiUrl}/todos/lucas_aguiar`, {
+        method: "POST",
+        body: JSON.stringify(body),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+        .then((resp) => {
+          return resp.json();
+        })
+        .then((resp) => {
+          setList((prevList) => [...prevList, resp]);
+          event.target.value = "";
+        })
+        .catch((error) => {
+          alert("Ocurrio un error y no se pudo agregar la mueva tarea");
+        });
     } else {
       alert("No se puede agregar una tarea vacía");
     }
   };
 
-  const deleteTaskHandler = (index) => {
-    let newList = list.filter((item, i) => i !== index);
-    setList(newList);
+  const deleteTaskHandler = (id) => {
+    fetch(`${apiUrl}/todos/${id}`, {
+      method: "DELETE",
+    })
+      .then((res) => {
+        if (res.ok) {
+          let newList = list.filter((item) => item.id !== id);
+          setList(newList);
+        }
+      })
+      .catch((error) => {
+        alert("Ocurrio un error al eliminar la tarea, intentelo mas tarde");
+      });
   };
 
   return (
@@ -39,14 +85,11 @@ const List = () => {
           {list &&
             list.map((item, index) => {
               return (
-                <div>
-                  <li
-                    className="d-flex align-items-center text-start list-group-item tarea"
-                    key={index}
-                  >
-                    {list[index]}
+                <div key={item.id}>
+                  <li className="d-flex align-items-center text-start list-group-item tarea">
+                    {item.label}
                     <i
-                      onClick={() => deleteTaskHandler(index)}
+                      onClick={() => deleteTaskHandler(item.id)}
                       className="bi bi-x"
                     ></i>
                   </li>
