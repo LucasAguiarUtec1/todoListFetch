@@ -6,17 +6,44 @@ const List = () => {
   const apiUrl = "https://playground.4geeks.com/todo";
 
   useEffect(() => {
+    let userRegistered = false;
     fetch(`${apiUrl}/users/lucas_aguiar`)
       .then((res) => {
         return res.json();
       })
       .then((res) => {
-        const tasks = res.todos.map((todo) => ({
-          label: todo.label,
-          is_done: todo.is_done,
-          id: todo.id,
-        }));
-        setList(tasks);
+        if (res.detail) {
+          userRegistered = false;
+        } else {
+          userRegistered = true;
+        }
+
+        if (!userRegistered) {
+          fetch(`${apiUrl}/users/lucas_aguiar`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }).catch((error) => {
+            alert("Error al registrar usuario en la api");
+          });
+        } else {
+          fetch(`${apiUrl}/users/lucas_aguiar`)
+            .then((res) => {
+              return res.json();
+            })
+            .then((res) => {
+              const tasks = res.todos.map((todo) => ({
+                label: todo.label,
+                is_done: todo.is_done,
+                id: todo.id,
+              }));
+              setList(tasks);
+            });
+        }
+      })
+      .catch((error) => {
+        console.log("Error al verificar si el usuario existe en la api", e);
       });
   }, []);
 
